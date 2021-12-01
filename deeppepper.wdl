@@ -3,17 +3,29 @@ version 1.0
 workflow deeppepper{
     input {
         File bam
+        File bai
         File ref
+        File fai
         Int threads = 64 # https://cloud.google.com/life-sciences/docs/tutorials/deepvariant
         String longreadtype = "ont" #ont_r9_guppy5_sup or ont_r10_q20 or hifi or ont
+        String? region
+        String output_dir = "output"
     }
+    
+    String output_prefix = bam + ".dp"
 
     call deeppeppertask {
+        
         input:
             bam = bam,
+            bai = bai,
             ref = ref,
+            fai = fai,
             threads = threads,
-            longreadtype = longreadtype
+            longreadtype = longreadtype,
+            region = region,              #chr20:1000000-1020000
+            output_dir = output_dir,
+            output_prefix = output_prefix
     }
 
     output {
@@ -28,17 +40,24 @@ workflow deeppepper{
 task deeppeppertask {
     input {
         File bam
+        File bai
         File ref
+        File fai
         Int threads
         String longreadtype
+        String? region
+        String output_dir
+        String output_prefix
     }
 
     command {
         run_pepper_margin_deepvariant call_variant \
         -b ~{bam} \
         -f ~{ref} \
-        -o output \
+        -o ~{output_dir} \
+        -p ~{output_prefix} \
         -t ~{threads} \
+        ~{"-r " + region} \
         --~{longreadtype}
     }
 
@@ -50,6 +69,6 @@ task deeppeppertask {
     }
 
     output {
-        File vcf_output = glob("output/*.vcf*")[0]  # workaround for check_gds issues with drs URIs
+        File vcf_output = glob(output_dir+"/"+output_prefix+"*.vcf*")[0]  # workaround for check_gds issues with drs URIs
     }
 }
