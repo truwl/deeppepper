@@ -26,8 +26,8 @@ workflow deeppepper{
     }
 
     output {
-        File vcf_output = deeppeppertask.vcf_output
-        File vcf_index = deeppeppertask.vcf_index
+        Array[File] vcf_output = deeppeppertask.vcf_outputs
+        Array[File] vcf_index = deeppeppertask.vcf_indexes
     }
 
     meta {allowNestedInputs: true}
@@ -67,7 +67,7 @@ task deeppeppertask {
     }
 
     output {
-        File vcf_output = glob(output_dir+"/*.vcf*")[0]
-        File vcf_index = glob(output_dir+"/*.vcf.tbi*")[0]
+        Array[File] vcf_outputs = glob(output_dir+"/*.vcf.gz")
+        Array[File] vcf_indexes = glob(output_dir+"/*.vcf.gz.tbi")
     }
 }
