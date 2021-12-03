@@ -11,11 +11,8 @@ workflow deeppepper{
         String? region
         String output_dir = "output"
     }
-    
-    String output_prefix = basename(bam) + ".dp"
 
     call deeppeppertask {
-        
         input:
             bam = bam,
             bai = bai,
@@ -25,11 +22,12 @@ workflow deeppepper{
             longreadtype = longreadtype,
             region = region,              #chr20:1000000-1020000
             output_dir = output_dir,
-            output_prefix = output_prefix
+            output_prefix = basename(bam)
     }
 
     output {
         File vcf_output = deeppeppertask.vcf_output
+        File vcf_index = deeppeppertask.vcf_index
     }
 
     meta {allowNestedInputs: true}
@@ -70,5 +68,6 @@ task deeppeppertask {
 
     output {
         File vcf_output = glob(output_dir+"/*.vcf*")[0]
+        File vcf_index = glob(output_dir+"/*.vcf.tbi*")[0]
     }
 }
