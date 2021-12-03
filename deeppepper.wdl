@@ -69,6 +69,6 @@ task deeppeppertask {
     }
 
     output {
-        File vcf_output = glob(output_dir+"/"+output_prefix+"*.vcf*")[0]  # workaround for check_gds issues with drs URIs
+        File vcf_output = glob(output_dir+"/*.vcf*")[0]
     }
 }
