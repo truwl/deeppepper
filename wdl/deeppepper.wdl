@@ -1,5 +1,14 @@
 version 1.0
 
+import "compoundbools.wdl"
+import "deeppeppertask.wdl" as deeppeppertask
+import "bcftools.wdl" as bcftools
+import "indel.wdl" as indel
+import "happy.wdl" as happy
+import "intervene.wdl" as intervene
+import "aggregate.wdl" as aggregate
+import "multiqc.wdl" as multiqc
+
 workflow deeppepper{
     input {
         File bam
@@ -290,9 +299,9 @@ workflow deeppepper{
         String job_id
         String workflow_instance_identifier
         String workflow_identifier
-    }
+    } #endinput
 
-    call deeppeppertask {
+    call deeppeppertask.deeppeppertask {
         input:
             bam = bam,
             bai = bai,
@@ -305,49 +314,187 @@ workflow deeppepper{
             output_prefix = basename(bam)
     }
 
-    output {
+    call bcftools.bcfstats as bcfstatstask {
+      input:
+        queryVCF = deeppeppertask.vcf_outputs[0]
+    }
+
+    Array[File] qualityReports = [bcfstatstask.bcfstatsoutput]
+
+    call multiqc.MultiQC as multiqcTask {
+      input:
+        reports = qualityReports,
+        outDir = "multiqc"
+    }
+
+    call happy.generateStratTable as popmakeStrat {
+      input:
+        myRegions = popRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = popRegionsPath,
+        prefix = 'pop'
+    }
+    call happy.generateStratTable as fcmakeStrat {
+      input:
+        myRegions = fcRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = fcRegionsPath,
+        prefix = 'fc'
+    }
+    call happy.generateStratTable as gcmakeStrat {
+      input:
+        myRegions = gcRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = gcRegionsPath,
+        prefix = 'gc'
+    }
+    call happy.generateStratTable as gsSonmakeStrat {
+      input:
+        myRegions = gsRegionsSon,
+        structToTrueLines = structToTrueLines,
+        bucketPath = gsRegionsPath,
+        prefix = 'gsSon'
+    }
+    call happy.generateStratTable as gsDadmakeStrat {
+      input:
+        myRegions = gsRegionsDad,
+        structToTrueLines = structToTrueLines,
+        bucketPath = gsRegionsPath,
+        prefix = 'gsDad'
+    }
+    call happy.generateStratTable as gsMommakeStrat {
+      input:
+        myRegions = gsRegionsMom,
+        structToTrueLines = structToTrueLines,
+        bucketPath = gsRegionsPath,
+        prefix = 'gsMom'
+    }
+    call happy.generateStratTable as gsOthermakeStrat {
+      input:
+        myRegions = gsRegionsOther,
+        structToTrueLines = structToTrueLines,
+        bucketPath = gsRegionsPath,
+        prefix = 'gsOther'
+    }
+    call happy.generateStratTable as lcmakeStrat {
+      input:
+        myRegions = lcRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = lcRegionsPath,
+        prefix = 'lc'
+    }
+    call happy.generateStratTable as mpmakeStrat {
+      input:
+        myRegions = mpRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = mpRegionsPath,
+        prefix = 'mp'
+    }
+    call happy.generateStratTable as odmakeStrat {
+      input:
+        myRegions = odRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = odRegionsPath,
+        prefix = 'od'
+    }
+    call happy.generateStratTable as sdmakeStrat {
+      input:
+        myRegions = sdRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = sdRegionsPath,
+        prefix = 'sd'
+    }
+    call happy.generateStratTable as unmakeStrat {
+      input:
+        myRegions = unRegions,
+        structToTrueLines = structToTrueLines,
+        bucketPath = unRegionsPath,
+        prefix = 'un'
+    }
+
+    call aggregate.aggStrat as aggAllStrats {
+      input:
+        stratTables = [popmakeStrat.stratTable,fcmakeStrat.stratTable,gcmakeStrat.stratTable,gsSonmakeStrat.stratTable,gsDadmakeStrat.stratTable,gsMommakeStrat.stratTable, gsOthermakeStrat.stratTable,lcmakeStrat.stratTable,mpmakeStrat.stratTable,odmakeStrat.stratTable,sdmakeStrat.stratTable,unmakeStrat.stratTable]
+    }
+    call aggregate.aggFiles as aggAllRegions {
+      input:
+        regionFilesArrays = [popmakeStrat.regionFiles,fcmakeStrat.regionFiles,gcmakeStrat.regionFiles,gsSonmakeStrat.regionFiles,gsDadmakeStrat.regionFiles,gsMommakeStrat.regionFiles,gsOthermakeStrat.regionFiles,lcmakeStrat.regionFiles,mpmakeStrat.regionFiles,odmakeStrat.regionFiles,sdmakeStrat.regionFiles,unmakeStrat.regionFiles]
+    }
+    call aggregate.nonEmpty as removeEmpty {
+      input:
+        emptyLines = aggAllRegions.regionFiles
+    }
+    call happy.happyStratify as happystrat {
+      input:
+        queryVCF = deeppeppertask.vcf_outputs[0],
+        truthVCF = truthVCF[truthVersion][subject][freeze],
+        highconfBed = highconfBed[truthVersion][subject][freeze],
+        referenceFasta = referenceFasta[freeze],
+        referenceFasta_indexed = referenceFasta_indexed[freeze],
+
+        stratTable = aggAllStrats.strattable,
+        regions = removeEmpty.noEmptyLines,
+        happyPrefix =  happyPrefix,
+        outputFile_commonPrefix = outputFile_commonPrefix,
+        consoleOutputPartialFilename = consoleOutputPartialFilename
+    }
+
+    #https://github.com/openwdl/wdl/issues/279
+    #https://bioinformatics.stackexchange.com/questions/16100/extracting-wdl-map-keys-as-a-task
+    scatter (regionFile in removeEmpty.noEmptyLines) {
+      call intervene.run_intervene as myintervene {
+        input:
+          includeB1S5A = includeB1S5A,
+          includeWX8VK = includeWX8VK,
+          includeCZA1Y = includeCZA1Y,
+          includeEIUT6 = includeEIUT6,
+          includeXC97E = includeXC97E,
+          includeXV7ZN = includeXV7ZN,
+          includeIA789 = includeIA789,
+          includeW607K = includeW607K,
+          subject = subject,
+          queryVCF = deeppeppertask.vcf_outputs[0],
+          freeze = freeze,
+          region = regionFile
+      }
+    }
+
+    call aggregate.melt as aggmelt {
+      input:
+        job_id = job_id,
+        workflow_instance_identifier = workflow_instance_identifier,
+        workflow_identifier = workflow_identifier,
+        extended_csv = happystrat.extended_csv,
+        Rscript_aggregate = Rscript_aggregate
+    }
+
+    call aggregate.precRecall as aggprecRecall {
+      input:
+        Rscript_precrecall = Rscript_precrecall,
+        staticcompetitors = competitors[freeze],
+        truwlbenchmarks = aggmelt.talltable,
+        samplename = job_id,
+        outputplotname = "precRecall.png"
+    }
+
+    call aggregate.finalReport as aggfinal {
+      input:
+        outputFile_commonPrefix = outputFile_commonPrefix,
+        happyPrefix = happyPrefix,
+        queryVCF = deeppeppertask.vcf_outputs[0],
+        freeze = freeze,
+        subject = subject,
+        jupyter_notebook = Jupyter_report,
+        upset_plots = select_all(myintervene.upsetplot),
+        prec_recall_plot = aggprecRecall.precrecallplot
+    }
+
+  output {
+    File multiqcReport = multiqcTask.multiqcReport
+    File finalreport = aggfinal.annohtml
         Array[File] vcf_output = deeppeppertask.vcf_outputs
         Array[File] vcf_index = deeppeppertask.vcf_indexes
     }
 
     meta {allowNestedInputs: true}
-}
-
-
-# https://github.com/kishwarshafin/pepper
-task deeppeppertask {
-    input {
-        File bam
-        File bai
-        File ref
-        File fai
-        Int threads
-        String longreadtype
-        String? region
-        String output_dir
-        String output_prefix
-    }
-
-    command {
-        run_pepper_margin_deepvariant call_variant \
-        -b ~{bam} \
-        -f ~{ref} \
-        -o ~{output_dir} \
-        -p ~{output_prefix} \
-        -t ~{threads} \
-        ~{"-r " + region} \
-        --~{longreadtype}
-    }
-
-    runtime {
-        cpu: threads
-        docker: "kishwars/pepper_deepvariant:r0.6"
-        disks: "local-disk 300 HDD"
-        memory: 240 + " GB" # https://cloud.google.com/life-sciences/docs/tutorials/deepvariant
-    }
-
-    output {
-        Array[File] vcf_outputs = glob(output_dir+"/*.vcf.gz")
-        Array[File] vcf_indexes = glob(output_dir+"/*.vcf.gz.tbi")
-    }
 }

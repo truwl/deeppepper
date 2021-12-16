@@ -7,7 +7,7 @@ meta:
   metadataStatus: Released
   workflowStatus: Released
   cytoscapeStatus: Incomplete
-  runit_filename: deeppepper.wdl
+  runit_filename: wdl/deeppepper.wdl
   runit_pipeline_name: deeppepper
   runit_git_hash: 0.6
   inputs_file: inputs.json
