@@ -20,10 +20,6 @@ workflow deeppepper{
         String? region
         String output_dir = "output"
 
-        String job_id
-        String workflow_instance_identifier
-        String workflow_identifier
-
         String freeze = "hg38"
         #HG002 (child), HG003 (dad), HG004 (mom)
         String subject = "HG002"
