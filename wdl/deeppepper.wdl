@@ -17,7 +17,7 @@ workflow deeppepper{
         File fai
         Int threads = 64 # https://cloud.google.com/life-sciences/docs/tutorials/deepvariant
         String longreadtype = "ont_r9_guppy5_sup" #ont_r9_guppy5_sup or ont_r10_q20 or hifi
-        String? region
+        String? region = null
         String output_dir = "output"
 
         String freeze = "hg38"

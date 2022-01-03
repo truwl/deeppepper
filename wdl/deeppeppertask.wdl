@@ -21,7 +21,7 @@ task deeppeppertask {
         -o ~{output_dir} \
         -p ~{output_prefix} \
         -t ~{threads} \
-        ~{"-r " + region} \
+        ${"-r " + region} \
         --~{longreadtype}
     }
 
