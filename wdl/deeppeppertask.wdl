@@ -13,7 +13,6 @@ task deeppeppertask {
         String output_dir
         String output_prefix
     }
-
     command {
         run_pepper_margin_deepvariant call_variant \
         -b ~{bam} \

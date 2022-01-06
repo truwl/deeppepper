@@ -131,14 +131,14 @@ workflow deeppepper{
         #high conf is 2,542,242,843 bp
         #MHC is           4,970,557 bp
         #difficult      628,689,391 bp
-        PopularRegions popRegions = {
+        Map[String, Boolean] popRegions = {
                                     'region_GRCh38_alldifficultregions':true,
                                     'region_GRCh38_MHC':false,
                                     'region_twist_exome_target_hg38':false,
                                     'region_HG002_GIAB_highconfidence':false
                                     }
 
-        FunctionalRegions fcRegions = {
+        Map[String, Boolean] fcRegions = {
                                         'region_GRCh38_notinrefseq_cds':false,
                                         'region_GRCh38_refseq_cds':false,
                                         'region_GRCh38_BadPromoters':false
@@ -299,6 +299,7 @@ workflow deeppepper{
         String workflow_identifier
     } #endinput
 
+    #chr20:1000000-1020000
     call deeppeppertask.deeppeppertask {
         input:
             bam = bam,
@@ -307,7 +308,7 @@ workflow deeppepper{
             fai = fai,
             threads = threads,
             longreadtype = longreadtype,
-            region = region,              #chr20:1000000-1020000
+            region = region,
             output_dir = output_dir,
             output_prefix = basename(bam)
     }
