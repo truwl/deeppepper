@@ -26,7 +26,7 @@ task deeppeppertask {
 
     runtime {
         cpu: threads
-        docker: "kishwars/pepper_deepvariant:r0.6"
+        docker: "kishwars/pepper_deepvariant:r0.7"
         disks: "local-disk 300 HDD"
         memory: 240 + " GB" # https://cloud.google.com/life-sciences/docs/tutorials/deepvariant
     }
